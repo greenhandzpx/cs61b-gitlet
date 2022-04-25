@@ -16,14 +16,45 @@ public class Functions {
             System.out.println("Creating .gitlet folder failed.");
             return false;
         }
+
+        // create necessary dirs
+        File objects = new File(".gitlet/objects");
+        File refs = new File(".gitlet/refs");
+        File logs = new File(".gitlet/logs");
+        if (!objects.mkdir() || !refs.mkdir() || !logs.mkdir()) {
+            System.out.println("create dir error");
+            return false;
+        }
+        File heads = new File(".gitlet/refs/heads");
+        refs = new File(".gitlet/logs/refs");
+        if (!heads.mkdir() || !refs.mkdir()) {
+            System.out.println("create dir error");
+            return false;
+        }
+        heads = new File(".gitlet/logs/refs/heads");
+        if (!heads.mkdir()) {
+            System.out.println("create dir error");
+            return false;
+        }
+
         // create the initial commit
         Commit commit = new Commit("initial commit", null);
-        // create a new branch called master
-        Branch master = new Branch("master", commit);
-        // put the master into branch set
-        Branch.branches.put(master.getBranchName(), master);
-        // make the head pointer point to master
-        Branch.HEAD = master;
+        // tmp is just an inter file to get the bytes of the commit
+        File tmp = new File(".gitlet/objects/tmp");
+        Utils.writeObject(tmp, commit);
+        byte[] bytes = Utils.readContents(tmp);
+        String hashCode = Utils.sha1((Object) bytes);
+        if (!tmp.delete()) {
+            System.out.println("Delete failed.");
+            return false;
+        }
+        Utils.writeObject(new File(".gitlet/objects/"+hashCode), commit);
+
+        // save the first commit into master branch
+        Utils.writeContents(new File(".gitlet/refs/heads/master"), hashCode);
+        // save the head pointer message
+        String headMessage = "refs/heads/master";
+        Utils.writeContents(new File(".gitlet/HEAD"), headMessage);
 
         return true;
     }
@@ -67,7 +98,7 @@ public class Functions {
 
     }
 
-    public static void commit() {
-
+    public static void commit(String message) {
+//        Commit commit = new Commit(message, )
     }
 }

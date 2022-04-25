@@ -37,11 +37,12 @@ public class Commit implements Serializable {
 
     public Commit(String message, Commit parent) {
         this.message = message;
-        this.parent = Utils.sha1(parent);
         if (parent == null) {
             // it means that this is to create an init commit
+            this.parent = "";
             this.timestamp = " 00:00:00 UTC, Thursday, 1 January 1970";
         } else {
+            this.parent = Utils.sha1(parent);
             Date date = new Date();
             String strDateFormat = "HH:mm:ss yyyy-MM-dd";
             SimpleDateFormat sdf = new SimpleDateFormat(strDateFormat);
