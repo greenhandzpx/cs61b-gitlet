@@ -18,6 +18,7 @@ public class Main {
                 Functions.init();
                 break;
             case "add":
+                Functions.add(args);
                 break;
             case "commit":
                 break;

@@ -41,14 +41,13 @@ public class Commit implements Serializable {
             // it means that this is to create an init commit
             this.parent = "";
             this.timestamp = " 00:00:00 UTC, Thursday, 1 January 1970";
+            this.files = new TreeMap<>();
         } else {
             this.parent = Utils.sha1(parent);
             Date date = new Date();
             String strDateFormat = "HH:mm:ss yyyy-MM-dd";
             SimpleDateFormat sdf = new SimpleDateFormat(strDateFormat);
             this.timestamp = sdf.format(date);
-        }
-        if (parent != null) {
             // gets all the files its parent controls
             this.files = parent.getFiles();
         }

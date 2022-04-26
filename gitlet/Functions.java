@@ -52,18 +52,21 @@ public class Functions {
 
         // save the first commit into master branch
         Utils.writeContents(new File(".gitlet/refs/heads/master"), hashCode);
-        // save the head pointer message
-        String headMessage = "refs/heads/master";
-        Utils.writeContents(new File(".gitlet/HEAD"), headMessage);
+        // save the head pointer(aka the master commit's hashCode)
+        Utils.writeContents(new File(".gitlet/HEAD"), hashCode);
 
         return true;
     }
 
     public static boolean add(String... files) {
+        if (files.length <= 1) {
+            return true;
+        }
         // get all the files that the head commit controls
-        TreeMap<String, String> oldFiles = Branch.HEAD.getCommit().getFiles();
+        Commit head = getHead();
+        TreeMap<String, String> oldFiles = head.getFiles();
         // This file is used for saving the staging files.
-        File fileStage = new File("index");
+        File fileStage = new File(".gitlet/index");
         if (!fileStage.exists()) {
             try {
                 if (!fileStage.createNewFile()) {
@@ -74,7 +77,12 @@ public class Functions {
                 e.printStackTrace();
             }
         }
+        boolean first = true;
         for (String file: files) {
+            if (first) {
+                first = false;
+                continue;
+            }
             File f = new File(file);
             if (!f.exists()) {
                 System.out.println("File does not exist.");
@@ -100,5 +108,10 @@ public class Functions {
 
     public static void commit(String message) {
 //        Commit commit = new Commit(message, )
+    }
+
+    public static Commit getHead() {
+        String headHash = Utils.readContentsAsString(new File(".gitlet/HEAD"));
+        return Utils.readObject(new File(".gitlet/objects/"+headHash), Commit.class);
     }
 }
