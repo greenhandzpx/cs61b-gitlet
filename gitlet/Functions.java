@@ -1,7 +1,11 @@
 package gitlet;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 public class Functions {
@@ -21,7 +25,8 @@ public class Functions {
         File objects = new File(".gitlet/objects");
         File refs = new File(".gitlet/refs");
         File logs = new File(".gitlet/logs");
-        if (!objects.mkdir() || !refs.mkdir() || !logs.mkdir()) {
+        File stage = new File(".gitlet/stage");
+        if (!objects.mkdir() || !refs.mkdir() || !logs.mkdir() || !stage.mkdir()) {
             System.out.println("create dir error");
             return false;
         }
@@ -39,15 +44,7 @@ public class Functions {
 
         // create the initial commit
         Commit commit = new Commit("initial commit", null);
-        // tmp is just an inter file to get the bytes of the commit
-        File tmp = new File(".gitlet/objects/tmp");
-        Utils.writeObject(tmp, commit);
-        byte[] bytes = Utils.readContents(tmp);
-        String hashCode = Utils.sha1((Object) bytes);
-        if (!tmp.delete()) {
-            System.out.println("Delete failed.");
-            return false;
-        }
+        String hashCode = Utils.sha1((Object) Utils.serialize(commit)) ;
         Utils.writeObject(new File(".gitlet/objects/"+hashCode), commit);
 
         // save the first commit into master branch
@@ -65,18 +62,6 @@ public class Functions {
         // get all the files that the head commit controls
         Commit head = getHead();
         TreeMap<String, String> oldFiles = head.getFiles();
-        // This file is used for saving the staging files.
-        File fileStage = new File(".gitlet/index");
-        if (!fileStage.exists()) {
-            try {
-                if (!fileStage.createNewFile()) {
-                    System.out.println("Creating stage file failed. Try adding again.");
-                    return false;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         boolean first = true;
         for (String file: files) {
             if (first) {
@@ -95,8 +80,10 @@ public class Functions {
             String oldHash = oldFiles.get(file);
             if (!newHash.equals(oldHash)) {
                 // It means this file is exactly modified.
-                // write the new staging file to "index"
-                Utils.writeContents(fileStage, (Object) contents);
+                // write the new staging Blob object to the staging area
+                Blob blob = new Blob(file, contents);
+                String hashCode = Utils.sha1((Object) Utils.serialize(blob));
+                Utils.writeObject(new File(".gitlet/stage/"+hashCode), blob);
             }
         }
         return true;
@@ -107,11 +94,37 @@ public class Functions {
     }
 
     public static void commit(String message) {
-//        Commit commit = new Commit(message, )
+        Commit head = getHead();
+        Commit currentCommit = new Commit(message, head);
+        // get all the staging files
+        List<Blob> blobs = getStagingFiles(".gitlet/stage");
+        for (Blob blob: blobs) {
+            // modify or add fileName-hashCode kv
+            currentCommit.getFiles().put(blob.getName(), Utils.sha1((Object) blob.getContent()));
+            // persist the blob to the objects dir
+            String hashCode = Utils.sha1((Object) Utils.serialize(blob));
+            Utils.writeObject(new File(".gitlet/objects/"+hashCode), blob);
+        }
+        // persist the new commit
+        String hashCode = Utils.sha1((Object) Utils.serialize(currentCommit));
+        Utils.writeObject(new File(".gitlet/objects/"+hashCode), currentCommit);
     }
 
     public static Commit getHead() {
         String headHash = Utils.readContentsAsString(new File(".gitlet/HEAD"));
         return Utils.readObject(new File(".gitlet/objects/"+headHash), Commit.class);
+    }
+
+
+    /**
+     * get all the staging files
+     */
+    public static List<Blob> getStagingFiles(String dir) {
+        List<String> fileNames = Utils.plainFilenamesIn(dir);
+        List<Blob> res = new ArrayList<>();
+        for (String fileName: fileNames) {
+            res.add(Utils.readObject(new File(fileName), Blob.class));
+        }
+        return res;
     }
 }
