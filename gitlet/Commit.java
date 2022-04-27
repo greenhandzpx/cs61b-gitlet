@@ -2,10 +2,7 @@ package gitlet;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * @author greenhandzpx
@@ -35,6 +32,14 @@ public class Commit implements Serializable {
         return files;
     }
 
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
     public Commit(String message, Commit parent) {
         this.message = message;
         if (parent == null) {
@@ -43,11 +48,10 @@ public class Commit implements Serializable {
             this.timestamp = " 00:00:00 UTC, Thursday, 1 January 1970";
             this.files = new TreeMap<>();
         } else {
-            this.parent = Utils.sha1(parent);
+            this.parent = Utils.sha1((Object) Utils.serialize(parent));
             Date date = new Date();
-            String strDateFormat = "HH:mm:ss yyyy-MM-dd";
-            SimpleDateFormat sdf = new SimpleDateFormat(strDateFormat);
-            this.timestamp = sdf.format(date);
+            this.timestamp = String.format(Locale.US, "%ta %tb %te %tT %tY +0800",
+                    date, date, date, date, date);
             // gets all the files its parent controls
             this.files = parent.getFiles();
         }

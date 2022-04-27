@@ -19,6 +19,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 
 /** Assorted utilities.
@@ -119,8 +121,9 @@ class Utils {
                 throw
                     new IllegalArgumentException("cannot overwrite directory");
             }
+            // here we set the CREATE and APPEND option
             BufferedOutputStream str =
-                new BufferedOutputStream(Files.newOutputStream(file.toPath()));
+                new BufferedOutputStream(Files.newOutputStream(file.toPath(), CREATE, APPEND));
             for (Object obj : contents) {
                 if (obj instanceof byte[]) {
                     str.write((byte[]) obj);

@@ -21,6 +21,14 @@ public class Main {
                 Functions.add(args);
                 break;
             case "commit":
+                if (args.length <= 1) {
+                    System.out.println("Please add a message.");
+                    break;
+                }
+                Functions.commit(args[1]);
+                break;
+            case "log":
+                Functions.log();
                 break;
             default:
                 System.out.println("No command with that name exists.");
